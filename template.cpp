@@ -4,15 +4,31 @@
 
 using namespace std;
 
-vector<string> inputFiles = {};
+struct Library {};
+
+vector<Library> libs;
+vector<int> books;
+int days;
 
 void solve() {}
 
-void readInput(istream& is) {}
+void readInput(istream& is) {
+    int bookCount, libCount;
+    is >> bookCount >> libCount >> days;
+
+    books.resize(bookCount);
+    for (int& b : books) {
+        is >> b;
+    }
+
+    libs.resize(libCount);
+}
 
 void printOutput(ostream& os) {}
 
 void printDebugOutput() {}
+
+vector<string> inputFiles = {"a", "b", "c", "d", "e", "f"};
 
 int main() {
     int inputToSolve;
