@@ -13,12 +13,20 @@ int days;
 struct Library {
     int signUpDays;
     int booksPerDay;
-    unordered_set<int> books;
+    unordered_set<int> libBooks;
 
     vector<int> toScan;
 
     bool canScanMore() const {
-        return (days - signUpDays) * booksPerDay - toScan.size() >= 0;
+        return (days - signUpDays) * booksPerDay - toScan.size() > 0;
+    }
+
+    int potentialScore() const {
+        int s = 0;
+        for (int b : toScan) {
+            s += books[b];
+        }
+        return s;
     }
 
     // int result() const {
@@ -31,7 +39,7 @@ struct Library {
 
 vector<Library> libs;
 
-void solveA() {
+void solveB() {
     vector<pair<int, int>> libSToId(libs.size());
     for (int i = 0; i < libs.size(); ++i) {
         libSToId[i].first = libs[i].signUpDays;
@@ -39,12 +47,15 @@ void solveA() {
     }
     sort(libSToId.begin(), libSToId.end());
 
+    unordered_set<int> addedBooks;
+
     for (int i = 0; i < libSToId.size(); ++i) {
         Library& lib = libs[libSToId[i].second];
 
-        for (int book : lib.books) {
-            if (lib.canScanMore()) {
+        for (int book : lib.libBooks) {
+            if (!addedBooks.count(book) && lib.canScanMore()) {
                 lib.toScan.push_back(book);
+                addedBooks.insert(book);
             }
         }
 
@@ -73,7 +84,7 @@ void solve() {
         for (int j = libSToId.size() - 1; j >= 0; --j) {
             Library& lib = libs[libSToId[j].second];
 
-            if (lib.canScanMore() && lib.books.count(i)) {
+            if (lib.canScanMore() && lib.libBooks.count(i)) {
                 lib.toScan.push_back(i);
                 libsSet.insert(libSToId[j].second);
                 break;
@@ -83,24 +94,46 @@ void solve() {
         printf("Books remaining: %d\n", i);
     }
 
-    libSToId.clear();
+    vector<pair<int, int>> scoreToId;
+    scoreToId.reserve(libsSet.size());
     for (int id : libsSet) {
-        libSToId.emplace_back(libs[id].signUpDays, id);
+        scoreToId.emplace_back(libs[id].potentialScore(), id);
     }
-    sort(libSToId.begin(), libSToId.end());
 
-    for (int i = 0; i < libSToId.size(); ++i) {
-        answerLibs.push_back(libSToId[i].second);
+    sort(scoreToId.begin(), scoreToId.end());
+    reverse(scoreToId.begin(), scoreToId.end());
+
+    for (int i = 0; i < scoreToId.size(); ++i) {
+        answerLibs.push_back(scoreToId[i].second);
     }
 }
 
 int calculateScore() {
     int score = 0;
+    int remDays = days;
+
+    unordered_set<int> seenLibs;
     for (int i = 0; i < answerLibs.size(); ++i) {
-        Library& lib = libs[answerLibs[i]];
-        for (int b : lib.toScan) {
-            score += books[b];
+        if (seenLibs.count(answerLibs[i])) {
+            puts("Invalid answer");
+            return -1;
         }
+
+        Library& lib = libs[answerLibs[i]];
+
+        remDays -= lib.signUpDays;
+        reverse(lib.toScan.begin(), lib.toScan.end());
+
+        for (int i = 0; i < singleRemDays && !lib.toScan.empty(); ++i) {
+            for (int j = 0; j < lib.booksPerDay && !lib.toScan.empty(); ++j) {
+                score += books[lib.toScan.back()];
+                lib.toScan.pop_back();
+            }
+        }
+
+        remDays -= lib.signUpDays;
+
+        seenLibs.insert(answerLibs[i]);
     }
     return score;
 }
@@ -122,7 +155,7 @@ void readInput(istream& is) {
         for (int i = 0; i < bookCount; ++i) {
             int b;
             is >> b;
-            lib.books.insert(b);
+            lib.libBooks.insert(b);
         }
     }
 
@@ -145,10 +178,11 @@ void printOutput(ostream& os) {
     }
 }
 
-void printDebugOutput() {
+void printDebugOutput(const string& file) {
     puts("----------------------");
 
     printf("Score: %d\n", calculateScore());
+    printf("Result for: %c\n", file[0]);
 }
 
 vector<string> inputFiles = {"a", "b", "c", "d", "e", "f"};
@@ -162,13 +196,13 @@ int main() {
     ofstream os("output/" + file + ".out");
 
     readInput(is);
-    if (file == "a") {
-        solveA();
+    if (file == "b") {
+        solveB();
     } else {
         solve();
     }
     printOutput(os);
-    printDebugOutput();
+    printDebugOutput(file);
 
     return 0;
 }
