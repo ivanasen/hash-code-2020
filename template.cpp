@@ -63,6 +63,55 @@ void solveB() {
     }
 }
 
+void solveD() {
+    vector<pair<int, int>> bookScoreToId(books.size());
+    for (int i = 0; i < books.size(); ++i) {
+        bookScoreToId[i].first = books[i];
+        bookScoreToId[i].second = i;
+    }
+    sort(bookScoreToId.begin(), bookScoreToId.end());
+
+    vector<pair<int, int>> libSToId(libs.size());
+    for (int i = 0; i < libs.size(); ++i) {
+        libSToId[i].first = libs[i].libBooks.size();
+        libSToId[i].second = i;
+    }
+    sort(libSToId.begin(), libSToId.end());
+
+    unordered_set<int> libsSet;
+
+    for (int i = bookScoreToId.size() - 1; i >= 0; --i) {
+        for (int j = libSToId.size() - 1; j >= 0; --j) {
+            Library& lib = libs[libSToId[j].second];
+
+            if (lib.canScanMore() && lib.libBooks.count(i)) {
+                lib.toScan.push_back(i);
+                libsSet.insert(libSToId[j].second);
+                break;
+            }
+        }
+
+        printf("Books remaining: %d\n", i);
+    }
+
+    vector<pair<int, int>> scoreToId;
+    scoreToId.reserve(libsSet.size());
+    for (int id : libsSet) {
+        scoreToId.emplace_back(libs[id].potentialScore(), id);
+    }
+
+    sort(scoreToId.begin(), scoreToId.end());
+    reverse(scoreToId.begin(), scoreToId.end());
+
+    for (int i = 0; i < scoreToId.size(); ++i) {
+        answerLibs.push_back(scoreToId[i].second);
+    }
+}
+
+void solveGreedy() {
+    
+}
+
 void solve() {
     vector<pair<int, int>> bookScoreToId(books.size());
     for (int i = 0; i < books.size(); ++i) {
@@ -124,14 +173,13 @@ int calculateScore() {
         remDays -= lib.signUpDays;
         reverse(lib.toScan.begin(), lib.toScan.end());
 
-        for (int i = 0; i < singleRemDays && !lib.toScan.empty(); ++i) {
+        for (int i = 0; i < remDays && !lib.toScan.empty();
+             i += lib.booksPerDay) {
             for (int j = 0; j < lib.booksPerDay && !lib.toScan.empty(); ++j) {
                 score += books[lib.toScan.back()];
                 lib.toScan.pop_back();
             }
         }
-
-        remDays -= lib.signUpDays;
 
         seenLibs.insert(answerLibs[i]);
     }
@@ -198,6 +246,8 @@ int main() {
     readInput(is);
     if (file == "b") {
         solveB();
+    } else if (file == "d") {
+        solveD();
     } else {
         solve();
     }
