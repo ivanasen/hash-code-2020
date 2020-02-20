@@ -1,12 +1,20 @@
 #include <fstream>
 #include <iostream>
+#include <unordered_set>
 #include <vector>
 
 using namespace std;
 
-struct Library {};
+struct Library {
+    int signUpDays;
+    int booksPerDay;
+    unordered_set<int> books;
+
+    vector<int> toScan;
+};
 
 vector<Library> libs;
+vector<int> answerLibs;
 vector<int> books;
 int days;
 
@@ -22,9 +30,33 @@ void readInput(istream& is) {
     }
 
     libs.resize(libCount);
+    for (Library& lib : libs) {
+        int bookCount;
+        is >> bookCount >> lib.signUpDays >> lib.booksPerDay;
+
+        for (int i = 0; i < bookCount; ++i) {
+            int b;
+            is >> b;
+            lib.books.insert(b);
+        }
+    }
 }
 
-void printOutput(ostream& os) {}
+void printOutput(ostream& os) {
+    os << answerLibs.size() << '\n';
+
+    for (int i = 0; i < answerLibs.size(); ++i) {
+        Library& lib = libs[answerLibs[i]];
+
+        os << answerLibs[i] << ' ' << lib.toScan.size() << '\n';
+
+        for (int b : lib.toScan) {
+            os << b << ' ';
+        }
+
+        os << '\n';
+    }
+}
 
 void printDebugOutput() {}
 
