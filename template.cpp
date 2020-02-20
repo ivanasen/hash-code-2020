@@ -52,14 +52,24 @@ void solveB() {
     for (int i = 0; i < libSToId.size(); ++i) {
         Library& lib = libs[libSToId[i].second];
 
-        for (int book : lib.libBooks) {
-            if (!addedBooks.count(book) && lib.canScanMore()) {
-                lib.toScan.push_back(book);
-                addedBooks.insert(book);
+        vector<pair<int, int>> scoreToBooks;
+        scoreToBooks.reserve(lib.libBooks.size());
+        for (int b : lib.libBooks) {
+            scoreToBooks.emplace_back(books[b], b);
+        }
+        sort(scoreToBooks.begin(), scoreToBooks.end());
+        reverse(scoreToBooks.begin(), scoreToBooks.end());
+
+        for (auto sb : scoreToBooks) {
+            if (!addedBooks.count(sb.second) && lib.canScanMore()) {
+                lib.toScan.push_back(sb.second);
+                addedBooks.insert(sb.second);
             }
         }
 
-        answerLibs.push_back(libSToId[i].second);
+        if (lib.toScan.size() > 0) {
+            answerLibs.push_back(libSToId[i].second);
+        }
     }
 }
 
@@ -108,9 +118,48 @@ void solveD() {
     }
 }
 
-void solveGreedy() {
-    
-}
+// void solveGreedy() {
+//     vector<pair<int, int>> libSToId(libs.size());
+//     for (int i = 0; i < libs.size(); ++i) {
+//         libSToId[i].first = libs[i].signUpDays;
+//         libSToId[i].second = i;
+//     }
+//     sort(libSToId.begin(), libSToId.end());
+
+//     unordered_set<int> libsSet;
+//     unordered_set<int> addedBooks;
+
+//     for (int i = 0; i < libSToId.size(); ++i) {
+//         Library& lib = libs[libSToId[]]
+//     }
+
+//     for (int i = bookScoreToId.size() - 1; i >= 0; --i) {
+//         for (int j = libSToId.size() - 1; j >= 0; --j) {
+//             Library& lib = libs[libSToId[j].second];
+
+//             if (lib.canScanMore() && lib.libBooks.count(i)) {
+//                 lib.toScan.push_back(i);
+//                 libsSet.insert(libSToId[j].second);
+//                 break;
+//             }
+//         }
+
+//         printf("Books remaining: %d\n", i);
+//     }
+
+//     vector<pair<int, int>> scoreToId;
+//     scoreToId.reserve(libsSet.size());
+//     for (int id : libsSet) {
+//         scoreToId.emplace_back(libs[id].potentialScore(), id);
+//     }
+
+//     sort(scoreToId.begin(), scoreToId.end());
+//     reverse(scoreToId.begin(), scoreToId.end());
+
+//     for (int i = 0; i < scoreToId.size(); ++i) {
+//         answerLibs.push_back(scoreToId[i].second);
+//     }
+// }
 
 void solve() {
     vector<pair<int, int>> bookScoreToId(books.size());
@@ -244,13 +293,13 @@ int main() {
     ofstream os("output/" + file + ".out");
 
     readInput(is);
-    if (file == "b") {
-        solveB();
-    } else if (file == "d") {
-        solveD();
-    } else {
-        solve();
-    }
+    // if (file == "b") {
+    solveB();
+    // } else if (file == "d") {
+    //     solveD();
+    // } else {
+    //     solve();
+    // }
     printOutput(os);
     printDebugOutput(file);
 
