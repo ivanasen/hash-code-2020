@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <cmath>
 #include <fstream>
 #include <iostream>
 #include <unordered_set>
@@ -39,10 +40,61 @@ struct Library {
 
 vector<Library> libs;
 
+int calculateScore(vector<int>& sol) {
+    int score = 0;
+    int remDays = days;
+
+    unordered_set<int> seenLibs;
+    for (int i = 0; i < sol.size(); ++i) {
+        if (seenLibs.count(sol[i])) {
+            puts("Invalid answer");
+            return -1;
+        }
+
+        Library& lib = libs[sol[i]];
+
+        remDays -= lib.signUpDays;
+        vector<int> toScan = lib.toScan;
+        reverse(toScan.begin(), toScan.end());
+
+        for (int i = 0; i < remDays && !toScan.empty(); i += lib.booksPerDay) {
+            for (int j = 0; j < lib.booksPerDay && !toScan.empty(); ++j) {
+                score += books[lib.toScan.back()];
+                toScan.pop_back();
+            }
+        }
+
+        seenLibs.insert(sol[i]);
+    }
+    return score;
+}
+
+void removeDuplicateBooks(vector<pair<double, int>>& libSToId) {
+    unordered_set<int> seenBooks;
+    for (auto si : libSToId) {
+        Library& lib = libs[si.second];
+
+        vector<int> toRm;
+        for (int b : lib.libBooks) {
+            if (seenBooks.count(b)) {
+                toRm.push_back(b);
+            } else {
+                seenBooks.insert(b);
+            }
+        }
+
+        for (int b : toRm) {
+            lib.libBooks.erase(b);
+        }
+    }
+}
+
 void solveB() {
-    vector<pair<int, int>> libSToId(libs.size());
+    vector<pair<double, int>> libSToId(libs.size());
     for (int i = 0; i < libs.size(); ++i) {
-        libSToId[i].first = libs[i].signUpDays;
+        libSToId[i].first = exp(libs[i].signUpDays) /
+                            (double)libs[i].libBooks.size() /
+                            libs[i].booksPerDay;
         libSToId[i].second = i;
     }
     sort(libSToId.begin(), libSToId.end());
@@ -55,13 +107,16 @@ void solveB() {
         vector<pair<int, int>> scoreToBooks;
         scoreToBooks.reserve(lib.libBooks.size());
         for (int b : lib.libBooks) {
+            if (addedBooks.count(b)) {
+                continue;
+            }
             scoreToBooks.emplace_back(books[b], b);
         }
         sort(scoreToBooks.begin(), scoreToBooks.end());
         reverse(scoreToBooks.begin(), scoreToBooks.end());
 
         for (auto sb : scoreToBooks) {
-            if (!addedBooks.count(sb.second) && lib.canScanMore()) {
+            if (lib.canScanMore()) {
                 lib.toScan.push_back(sb.second);
                 addedBooks.insert(sb.second);
             }
@@ -71,6 +126,51 @@ void solveB() {
             answerLibs.push_back(libSToId[i].second);
         }
     }
+
+    // vector<pair<double, int>> scoreToId;
+    // scoreToId.reserve(answerLibs.size());
+    // for (int id : answerLibs) {
+    //     // scoreToId.emplace_back(libs[id].potentialScore(), id);
+    //     // scoreToId.emplace_back(libs[id].toScan.size() /
+    //     //                            (double)libs[id].booksPerDay /
+    //     //                            (double)libs[id].signUpDays,
+    //     //                        id);
+    //     scoreToId.emplace_back(
+    //         exp(libs[id].signUpDays) / (double)libs[id].toScan.size(), id);
+    // }
+
+    // sort(scoreToId.begin(), scoreToId.end());
+    // // reverse(scoreToId.begin(), scoreToId.end());
+
+    // answerLibs.clear();
+    // for (int i = 0; i < scoreToId.size(); ++i) {
+    //     answerLibs.push_back(scoreToId[i].second);
+    // }
+
+    // vector<int> best = answerLibs;
+    // int bestScore = calculateScore(answerLibs);
+
+    // vector<int> current = best;
+    // int currentScore = bestScore;
+    // for (int i = 0; i < 100; ++i) {
+    //     vector<int> newA = best;
+
+    //     for (int j = 0; j < 10; ++j) {
+    //         int pos1 = rand() % newA.size();
+    //         int pos2 = rand() % newA.size();
+
+    //         swap(newA[pos1], newA[pos2]);
+    //     }
+
+    //     int newScore = calculateScore(newA);
+
+    //     if (newScore > bestScore) {
+    //         best = newA;
+    //         bestScore = newScore;
+    //     }
+    // }
+
+    // answerLibs = best;
 }
 
 void solveD() {
@@ -206,35 +306,6 @@ void solve() {
     }
 }
 
-int calculateScore() {
-    int score = 0;
-    int remDays = days;
-
-    unordered_set<int> seenLibs;
-    for (int i = 0; i < answerLibs.size(); ++i) {
-        if (seenLibs.count(answerLibs[i])) {
-            puts("Invalid answer");
-            return -1;
-        }
-
-        Library& lib = libs[answerLibs[i]];
-
-        remDays -= lib.signUpDays;
-        reverse(lib.toScan.begin(), lib.toScan.end());
-
-        for (int i = 0; i < remDays && !lib.toScan.empty();
-             i += lib.booksPerDay) {
-            for (int j = 0; j < lib.booksPerDay && !lib.toScan.empty(); ++j) {
-                score += books[lib.toScan.back()];
-                lib.toScan.pop_back();
-            }
-        }
-
-        seenLibs.insert(answerLibs[i]);
-    }
-    return score;
-}
-
 void readInput(istream& is) {
     int bookCount, libCount;
     is >> bookCount >> libCount >> days;
@@ -278,7 +349,7 @@ void printOutput(ostream& os) {
 void printDebugOutput(const string& file) {
     puts("----------------------");
 
-    printf("Score: %d\n", calculateScore());
+    printf("Score: %d\n", calculateScore(answerLibs));
     printf("Result for: %c\n", file[0]);
 }
 
